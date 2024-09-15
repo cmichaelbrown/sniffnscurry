@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sniff and Scurry</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            background-color: #f0f0f0;
+            display: block;
+            margin: 0 auto;
+        }
+        #arrowPad {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+        }
+        .arrowButton {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            background-color: #ccc;
+            border: none;
+            font-size: 24px;
+        }
+        #timer {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        #message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+    <div id="timer">Sniff Time: 0s</div>
+    <div id="message"></div>
+
+    <!-- Onscreen Arrow Pad -->
+    <div id="arrowPad">
+        <button class="arrowButton" id="leftButton">◀</button>
+        <div style="display: flex; flex-direction: column;">
+            <button class="arrowButton" id="upButton">▲</button>
+            <button class="arrowButton" id="downButton">▼</button>
+        </div>
+        <button class="arrowButton" id="rightButton">▶</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const timerDisplay = document.getElementById('timer');
+        const messageDisplay = document.getElementById('message');
+
+        const tileSize = 40;
+        const tilesX = canvas.width / tileSize;
+        const tilesY = canvas.height / tileSize;
+
+        let level = 1;
+        let path = [];
+        let player = { x: 0, y: 0 };
+        let gameState = 'sniff'; // 'sniff', 'scurry', 'fail', 'pass'
+        let sniffTime = 0;
+        let scurryTime = 0;
+        let sniffInterval;
+        let scurryInterval;
+
+        // Generate Path
+        function generatePath() {
+            path = [];
+            let x = 0;
+            let y = 0;
+            path.push({ x, y });
+            const directions = ['up', 'down', 'left', 'right'];
+            for (let i = 0; i < level + 4; i++) {
+                let dir = directions[Math.floor(Math.random() * directions.length)];
+                switch (dir) {
+                    case 'up':
+                        if (y > 0) y--;
+                        break;
+                    case 'down':
+                        if (y < tilesY - 1) y++;
+                        break;
+                    case 'left':
+                        if (x > 0) x--;
+                        break;
+                    case 'right':
+                        if (x < tilesX - 1) x++;
+                        break;
+                }
+                path.push({ x, y });
+            }
+        }
+
+        // Draw Game
+        function drawGame(showPath) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Path
+            if (showPath) {
+                ctx.fillStyle = '#d3d3d3';
+                path.forEach(tile => {
+                    ctx.fillRect(tile.x * tileSize, tile.y * tileSize, tileSize, tileSize);
+                });
+            }
+
+            // Draw Cheese
+            let cheese = path[path.length - 1];
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.arc(cheese.x * tileSize + tileSize / 2, cheese.y * tileSize + tileSize / 2, tileSize / 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Player
+            ctx.fillStyle = 'gray';
+            ctx.beginPath();
+            ctx.arc(player.x * tileSize + tileSize / 2, player.y * tileSize + tileSize / 2, tileSize / 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Start Sniff Time
+        function startSniffTime() {
+            gameState = 'sniff';
+            sniffTime = 0;
+            timerDisplay.textContent = `Sniff Time: ${sniffTime}s`;
+            sniffInterval = setInterval(() => {
+                sniffTime++;
+                timerDisplay.textContent = `Sniff Time: ${sniffTime}s`;
+            }, 1000);
+            drawGame(true);
+        }
+
+        // End Sniff Time
+        function endSniffTime() {
+            clearInterval(sniffInterval);
+            gameState = 'scurry';
+            scurryTime = 0;
+            timerDisplay.textContent = `Scurry Time: ${scurryTime}s`;
+            scurryInterval = setInterval(() => {
+                scurryTime++;
+                timerDisplay.textContent = `Scurry Time: ${scurryTime}s`;
+            }, 1000);
+            drawGame(false);
+        }
+
+        // Check Collision
+        function checkCollision() {
+            if (!path.find(tile => tile.x === player.x && tile.y === player.y)) {
+                gameState = 'fail';
+                clearInterval(scurryInterval);
+                messageDisplay.textContent = 'Fail!';
+                messageDisplay.style.display = 'block';
+            } else if (player.x === path[path.length - 1].x && player.y === path[path.length - 1].y) {
+                gameState = 'pass';
+                clearInterval(scurryInterval);
+                messageDisplay.textContent = 'Pass!';
+                messageDisplay.style.display = 'block';
+                level++;
+            }
+        }
+
+        // Handle Movement
+        function movePlayer(dx, dy) {
+            if (gameState === 'sniff') {
+                endSniffTime();
+            }
+            if (gameState === 'scurry') {
+                player.x += dx;
+                player.y += dy;
+                if (player.x < 0) player.x = 0;
+                if (player.y < 0) player.y = 0;
+                if (player.x >= tilesX) player.x = tilesX - 1;
+                if (player.y >= tilesY) player.y = tilesY - 1;
+                checkCollision();
+                drawGame(false);
+            }
+        }
+
+        // Keyboard Controls
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp':
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                    movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    movePlayer(1, 0);
+                    break;
+            }
+        });
+
+        // Onscreen Arrow Pad Controls
+        document.getElementById('upButton').addEventListener('click', () => movePlayer(0, -1));
+        document.getElementById('downButton').addEventListener('click', () => movePlayer(0, 1));
+        document.getElementById('leftButton').addEventListener('click', () => movePlayer(-1, 0));
+        document.getElementById('rightButton').addEventListener('click', () => movePlayer(1, 0));
+
+        // Start Game
+        function startGame() {
+            player = { x: 0, y: 0 };
+            generatePath();
+            startSniffTime();
+            messageDisplay.style.display = 'none';
+        }
+
+        // Restart on Message Click
+        messageDisplay.addEventListener('click', startGame);
+
+        // Initialize Game
+        startGame();
+    </script>
+</body>
+</html>
