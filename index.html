@@ -163,6 +163,7 @@
                 timerDisplay.textContent = `Sniff Time: ${sniffTime}s`;
             }, 1000);
             drawGame(true);
+            setTimeout(() => endSniffTime(), 5000); // Reveal maze for 5 seconds
         }
 
         // End Sniff Time
@@ -183,12 +184,12 @@
             if (!path.find(tile => tile.x === player.x && tile.y === player.y)) {
                 gameState = 'fail';
                 clearInterval(scurryInterval);
-                messageDisplay.textContent = 'Fail!';
+                messageDisplay.textContent = 'Fail! Try again!';
                 messageDisplay.style.display = 'block';
             } else if (player.x === path[path.length - 1].x && player.y === path[path.length - 1].y) {
                 gameState = 'pass';
                 clearInterval(scurryInterval);
-                messageDisplay.textContent = 'Pass!';
+                messageDisplay.textContent = 'Pass! Good job!';
                 messageDisplay.style.display = 'block';
                 level++;
             }
