@@ -10,10 +10,18 @@
             background-color: #1a1a1a;
             color: #f0f0f0;
             font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #levelTitle {
+            font-size: 28px;
+            margin-bottom: 10px;
         }
         #gameCanvas {
             display: block;
-            margin: 0 auto;
             background-color: #2e2e2e;
         }
         #arrowPad {
@@ -56,12 +64,26 @@
             display: none;
             z-index: 2;
         }
+        #restartMessage {
+            position: fixed;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 2;
+        }
     </style>
 </head>
 <body>
+    <div id="levelTitle">Level 1: Easy Cheesy!</div>
     <canvas id="gameCanvas" width="600" height="600"></canvas>
     <div id="timer">Sniff Time: 0s</div>
     <div id="message"></div>
+    <div id="restartMessage">Press Space or Enter to start the next level</div>
 
     <!-- Onscreen Arrow Pad -->
     <div id="arrowPad">
@@ -78,6 +100,8 @@
         const ctx = canvas.getContext('2d');
         const timerDisplay = document.getElementById('timer');
         const messageDisplay = document.getElementById('message');
+        const restartMessage = document.getElementById('restartMessage');
+        const levelTitle = document.getElementById('levelTitle');
 
         const tileSize = 40;
         const tilesX = canvas.width / tileSize;
@@ -92,11 +116,22 @@
         let sniffInterval;
         let scurryInterval;
 
+        const levelNames = [
+            'Easy Cheesy!',
+            'Mild Challenge!',
+            'Cheddar Chase!',
+            'Gruyère Gauntlet!',
+            'Brie-lliant Escape!',
+            'Pungent Pursuit!',
+            'The Limburger Labyrinth!'
+        ];
+
         // Generate Path
         function generatePath() {
             path = [];
-            let x = 0;
-            let y = 0;
+            let x = Math.floor(Math.random() * tilesX);
+            let y = Math.floor(Math.random() * tilesY);
+            player = { x, y };
             path.push({ x, y });
             const directions = ['up', 'down', 'left', 'right'];
             for (let i = 0; i < level + 4; i++) {
@@ -179,19 +214,23 @@
             drawGame(false);
         }
 
+        // End Scurry Time
+        function endScurryTime(state) {
+            clearInterval(scurryInterval);
+            gameState = state;
+            const totalTime = sniffTime + scurryTime;
+            messageDisplay.textContent = `${state === 'pass' ? 'Pass! Good job!' : 'Fail! Try again!'}\nTotal Time: ${totalTime}s`;
+            messageDisplay.style.display = 'block';
+            restartMessage.style.display = 'block';
+        }
+
         // Check Collision
         function checkCollision() {
             if (!path.find(tile => tile.x === player.x && tile.y === player.y)) {
-                gameState = 'fail';
-                clearInterval(scurryInterval);
-                messageDisplay.textContent = 'Fail! Try again!';
-                messageDisplay.style.display = 'block';
+                endScurryTime('fail');
             } else if (player.x === path[path.length - 1].x && player.y === path[path.length - 1].y) {
-                gameState = 'pass';
-                clearInterval(scurryInterval);
-                messageDisplay.textContent = 'Pass! Good job!';
-                messageDisplay.style.display = 'block';
                 level++;
+                endScurryTime('pass');
             }
         }
 
@@ -227,6 +266,12 @@
                 case 'ArrowRight':
                     movePlayer(1, 0);
                     break;
+                case ' ':
+                case 'Enter':
+                    if (gameState === 'fail' || gameState === 'pass') {
+                        startGame();
+                    }
+                    break;
             }
         });
 
@@ -238,14 +283,13 @@
 
         // Start Game
         function startGame() {
-            player = { x: 0, y: 0 };
+            player = { x: Math.floor(Math.random() * tilesX), y: Math.floor(Math.random() * tilesY) };
             generatePath();
             startSniffTime();
             messageDisplay.style.display = 'none';
+            restartMessage.style.display = 'none';
+            levelTitle.textContent = `Level ${level}: ${levelNames[(level - 1) % levelNames.length]}`;
         }
-
-        // Restart on Message Click
-        messageDisplay.addEventListener('click', startGame);
 
         // Initialize Game
         startGame();
