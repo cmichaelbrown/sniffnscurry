@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sniff 'N Scurry</title>
+    <title>Sniff and Scurry</title>
     <style>
         body {
             margin: 0;
@@ -111,12 +111,11 @@
         let path = [];
         let player = { x: 0, y: 0 };
         let gameState = 'sniff';
-            playerHasMoved = false; // 'sniff', 'scurry', 'fail', 'pass'
+        let playerHasMoved = false;
         let sniffTime = 0;
         let scurryTime = 0;
         let sniffInterval;
         let scurryInterval;
-        let playerHasMoved = false;
 
         const levelNames = [
             'Easy Cheesy!',
@@ -134,30 +133,36 @@
             let x = Math.floor(Math.random() * tilesX);
             let y = Math.floor(Math.random() * tilesY);
             player = { x, y };
+
+            let cheeseX, cheeseY;
             do {
-                let cheeseX = Math.floor(Math.random() * tilesX);
-                let cheeseY = Math.floor(Math.random() * tilesY);
-                path.push({ x: cheeseX, y: cheeseY });
-            } while (path[0].x === player.x && path[0].y === player.y);
+                cheeseX = Math.floor(Math.random() * tilesX);
+                cheeseY = Math.floor(Math.random() * tilesY);
+            } while (cheeseX === player.x && cheeseY === player.y);
+
+            path.push({ x: cheeseX, y: cheeseY });
 
             const directions = ['up', 'down', 'left', 'right'];
-            for (let i = 0; i < level + 4; i++) {
+            let currentX = player.x;
+            let currentY = player.y;
+
+            for (let i = 0; i < level + 4 + level; i++) { // Increase path length with each level
                 let dir = directions[Math.floor(Math.random() * directions.length)];
                 switch (dir) {
                     case 'up':
-                        if (y > 0) y--;
+                        if (currentY > 0) currentY--;
                         break;
                     case 'down':
-                        if (y < tilesY - 1) y++;
+                        if (currentY < tilesY - 1) currentY++;
                         break;
                     case 'left':
-                        if (x > 0) x--;
+                        if (currentX > 0) currentX--;
                         break;
                     case 'right':
-                        if (x < tilesX - 1) x++;
+                        if (currentX < tilesX - 1) currentX++;
                         break;
                 }
-                path.push({ x, y });
+                path.push({ x: currentX, y: currentY });
             }
         }
 
