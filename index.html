@@ -81,7 +81,7 @@
 <body>
     <div id="levelTitle">Level 1: Easy Cheesy!</div>
     <canvas id="gameCanvas" width="600" height="600"></canvas>
-    <div id="timer">Sniff Time: 0s</div>
+    <div id="timer">Sniff Time: 0.00s</div>
     <div id="message"></div>
     <div id="restartMessage">Press Space or Enter to start the next level</div>
 
@@ -115,6 +115,7 @@
         let scurryTime = 0;
         let sniffInterval;
         let scurryInterval;
+        let playerHasMoved = false;
 
         const levelNames = [
             'Easy Cheesy!',
@@ -132,7 +133,12 @@
             let x = Math.floor(Math.random() * tilesX);
             let y = Math.floor(Math.random() * tilesY);
             player = { x, y };
-            path.push({ x, y });
+            do {
+                let cheeseX = Math.floor(Math.random() * tilesX);
+                let cheeseY = Math.floor(Math.random() * tilesY);
+                path.push({ x: cheeseX, y: cheeseY });
+            } while (path[0].x === player.x && path[0].y === player.y);
+
             const directions = ['up', 'down', 'left', 'right'];
             for (let i = 0; i < level + 4; i++) {
                 let dir = directions[Math.floor(Math.random() * directions.length)];
@@ -192,13 +198,8 @@
         function startSniffTime() {
             gameState = 'sniff';
             sniffTime = 0;
-            timerDisplay.textContent = `Sniff Time: ${sniffTime}s`;
-            sniffInterval = setInterval(() => {
-                sniffTime++;
-                timerDisplay.textContent = `Sniff Time: ${sniffTime}s`;
-            }, 1000);
+            timerDisplay.textContent = `Sniff Time: ${sniffTime.toFixed(2)}s`;
             drawGame(true);
-            setTimeout(() => endSniffTime(), 5000); // Reveal maze for 5 seconds
         }
 
         // End Sniff Time
@@ -206,11 +207,11 @@
             clearInterval(sniffInterval);
             gameState = 'scurry';
             scurryTime = 0;
-            timerDisplay.textContent = `Scurry Time: ${scurryTime}s`;
+            timerDisplay.textContent = `Scurry Time: ${scurryTime.toFixed(2)}s`;
             scurryInterval = setInterval(() => {
-                scurryTime++;
-                timerDisplay.textContent = `Scurry Time: ${scurryTime}s`;
-            }, 1000);
+                scurryTime += 0.01;
+                timerDisplay.textContent = `Scurry Time: ${scurryTime.toFixed(2)}s`;
+            }, 10);
             drawGame(false);
         }
 
@@ -219,9 +220,10 @@
             clearInterval(scurryInterval);
             gameState = state;
             const totalTime = sniffTime + scurryTime;
-            messageDisplay.textContent = `${state === 'pass' ? 'Pass! Good job!' : 'Fail! Try again!'}\nTotal Time: ${totalTime}s`;
+            messageDisplay.textContent = `${state === 'pass' ? 'Pass! Good job!' : 'Fail! Try again!'}\nTotal Time: ${totalTime.toFixed(2)}s`;
             messageDisplay.style.display = 'block';
             restartMessage.style.display = 'block';
+            playerHasMoved = false;
         }
 
         // Check Collision
@@ -236,9 +238,14 @@
 
         // Handle Movement
         function movePlayer(dx, dy) {
-            if (gameState === 'sniff') {
-                endSniffTime();
+            if (!playerHasMoved) {
+                playerHasMoved = true;
+                sniffInterval = setInterval(() => {
+                    sniffTime += 0.01;
+                    timerDisplay.textContent = `Sniff Time: ${sniffTime.toFixed(2)}s`;
+                }, 10);
             }
+
             if (gameState === 'scurry') {
                 player.x += dx;
                 player.y += dy;
@@ -284,7 +291,11 @@
         // Start Game
         function startGame() {
             player = { x: Math.floor(Math.random() * tilesX), y: Math.floor(Math.random() * tilesY) };
+            playerHasMoved = false;
             generatePath();
+            sniffTime = 0;
+            scurryTime = 0;
+            timerDisplay.textContent = `Sniff Time: ${sniffTime.toFixed(2)}s`;
             startSniffTime();
             messageDisplay.style.display = 'none';
             restartMessage.style.display = 'none';
