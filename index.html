@@ -110,7 +110,8 @@
         let level = 1;
         let path = [];
         let player = { x: 0, y: 0 };
-        let gameState = 'sniff'; // 'sniff', 'scurry', 'fail', 'pass'
+        let gameState = 'sniff';
+            playerHasMoved = false; // 'sniff', 'scurry', 'fail', 'pass'
         let sniffTime = 0;
         let scurryTime = 0;
         let sniffInterval;
@@ -246,7 +247,7 @@
                 }, 10);
             }
 
-            if (gameState === 'scurry') {
+            if (gameState === 'sniff' || gameState === 'scurry') {
                 player.x += dx;
                 player.y += dy;
                 if (player.x < 0) player.x = 0;
